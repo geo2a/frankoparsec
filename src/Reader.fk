@@ -1,0 +1,19 @@
+sig Reader E
+  = ask [] E
+
+note
+  sig Reader' E
+    = ask' [] E
+    | local {E -> E} (Reader E) [] (Reader E)
+
+note
+  reader E [Reader E ? X] [] X
+  reader _ [x]          = x
+  reader e [ask   ? k]  = reader e ? k e
+
+note ---------------------------------------------------------------------------
+note ---------------------------- EXAMPLES -------------------------------------
+note ---------------------------------------------------------------------------
+
+  reader_example_1 [Reader Nat] Nat
+  reader_example_1 = ask! >>= {cfg -> suc cfg}

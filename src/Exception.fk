@@ -1,0 +1,27 @@
+data Maybe A = just A | nothing 
+
+sig Exception E
+  = throw E [] X
+
+note 
+  catch [Exception E ? X] [] Either E X
+  catch [x]            = right x  
+  catch [throw e ? k]  = left e
+
+note
+catch' [Exception E ? X] [] Maybe X
+catch' [x]            = just x
+catch' [throw e ? k]  = nothing
+
+note Usage example, needs Nat.fk
+
+  ex [Exception Char] Char
+  ex = 'a' >> throw 'b'
+
+  note
+  main [] Maybe Char
+  main = catch' ? ex!
+
+  main [] Either Char Nat
+  main = left 'a'
+

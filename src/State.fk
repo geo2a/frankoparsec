@@ -1,0 +1,26 @@
+sig State S
+  = get [] S
+  | put S []
+
+state S [State S ? X] [] X
+state _ [x]          = x
+state s [get   ? k]  = state s ? k s
+state _ [put s ? k]  = state s ? k ()
+
+note ---------------------------------------------------------------------------
+note ---------------------------- EXAMPLES -------------------------------------
+note ---------------------------------------------------------------------------
+
+note
+  state_example [State Nat] Nat
+  state_example = get!
+
+note Тайпчекается -- get относится к первому стейту. Если заменить тип результата
+     на Char (тип второго стейта) -- получим тайп мисматч (Nat /= Char).
+
+  double_state [State Nat, State Char] Nat
+  double_state = get!
+
+note
+  main [] Nat
+  main = state zero ? state_example!

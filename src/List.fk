@@ -1,0 +1,26 @@
+data List X
+  = nil
+  | X :: (List X)
+
+(List X) ++ (List X) [] List X
+nil        ++ ys = ys
+(x :: xs)  ++ ys = x :: (xs ++ ys)
+
+map {S -> T} (List S) [] List T
+map f nil       = nil
+map f (x :: xs) = f x :: map f xs
+
+foldl {Y -> X -> Y} Y (List X) [] Y
+foldl g acc nil       = acc
+foldl g acc (x :: xs) = foldl g (g acc x) xs
+
+concat (List (List X)) [] List X
+concat xs = foldl {x y -> x ++ y} nil xs
+
+note
+  sum (List Nat) [] Nat
+  sum xs = foldl {x y -> x + y} zero xs
+
+note
+  main [] Nat
+  main = sum (suc zero :: (suc zero :: nil))
