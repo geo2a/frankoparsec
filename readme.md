@@ -1,4 +1,4 @@
-Experimental parsers combinators library implemented with Frank programming language, based on (frankjnr)[https://github.com/cmcl/frankjnr] implementation. 
+Experimental parsers combinators library implemented with Frank programming language, based on [frankjnr](https://github.com/cmcl/frankjnr) implementation. 
 
 ## Running something 
 
