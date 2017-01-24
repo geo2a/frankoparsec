@@ -1,0 +1,188 @@
+--   X >> Y [] Y
+--   x >> y = y
+
+--   X >>= {X -> [] Y} [] Y
+--   x >>= f = f x
+
+-- sequencing
+on : X -> {X -> Y} -> Y
+on x f = f x
+
+-- lazy conditional
+if : Bool -> {X} -> {X} -> X
+if true  t f = t!
+if false t f = f!
+
+map : {{X -> Y} -> List X -> List Y}
+map f nil         = nil
+map f (cons x xs) = cons (f x) (map f xs)
+
+foldl : {{Y -> X -> Y} -> Y -> (List X) -> Y}
+foldl g acc nil       = acc
+foldl g acc (x :: xs) = foldl g (g acc x) xs
+
+
+data Bool = true | false
+
+{--- Natural numbers and Ints ---}
+
+data Nat = zero | suc Nat
+
+eqNat : Nat -> Nat -> Bool
+eqNat zero zero  = true
+eqNat (suc x) (suc y) = eqNat x y
+eqNat zero _     = false
+eqNat _  zero    = false
+
+plusNat : Nat -> Nat -> Nat
+plusNat zero y = y
+plusNat (suc x) y = suc (plusNat x y)
+
+eqInt : Int -> Int -> Bool 
+eqInt 0 0 = true 
+eqInt 0 _ = false
+eqInt _ 0 = false
+eqInt x y = eqInt (x - 1) (y - 1)
+
+{--- Lists ---}
+
+append : List X -> List X -> List X
+append nil ys         = ys
+append (cons x xs) ys = cons x (append xs ys)
+
+concat : (List (List X)) -> List X
+concat xs = foldl {x y -> append x y} nil xs
+
+{--- Other ---}
+
+data Zero =     -- empty type
+
+data Maybe A = just A | nothing
+
+data Either A B = left A | right B
+{--- Chars and strings ---}
+
+eqChar : Char -> Char -> Bool
+eqChar 'a' 'a' = true
+eqChar 'b' 'b' = true
+eqChar 'c' 'c' = true
+eqChar 'd' 'd' = true
+eqChar 'e' 'e' = true
+eqChar 'f' 'f' = true
+eqChar 'g' 'g' = true
+eqChar 'h' 'h' = true
+eqChar 'i' 'i' = true
+eqChar 'j' 'j' = true
+eqChar 'k' 'k' = true
+eqChar 'l' 'l' = true
+eqChar 'm' 'm' = true
+eqChar 'n' 'n' = true
+eqChar 'o' 'o' = true
+eqChar 'p' 'p' = true
+eqChar 'q' 'q' = true
+eqChar 'r' 'r' = true
+eqChar 's' 's' = true
+eqChar 't' 't' = true
+eqChar 'u' 'u' = true
+eqChar 'v' 'v' = true
+eqChar 'w' 'w' = true
+eqChar 'x' 'x' = true
+eqChar 'y' 'y' = true
+eqChar 'z' 'z' = true
+eqChar _   _   = false 
+
+toUpper : Char -> Char
+toUpper 'a' = 'A'
+toUpper 'b' = 'B'
+toUpper 'c' = 'C'
+toUpper 'd' = 'D'
+toUpper 'e' = 'E'
+toUpper 'f' = 'F'
+toUpper 'g' = 'G'
+toUpper 'h' = 'H'
+toUpper 'i' = 'I'
+toUpper 'j' = 'J'
+toUpper 'k' = 'K'
+toUpper 'l' = 'L'
+toUpper 'm' = 'M'
+toUpper 'n' = 'N'
+toUpper 'o' = 'O'
+toUpper 'p' = 'P'
+toUpper 'q' = 'Q'
+toUpper 'r' = 'R'
+toUpper 's' = 'S'
+toUpper 't' = 'T'
+toUpper 'u' = 'U'
+toUpper 'v' = 'V'
+toUpper 'w' = 'W'
+toUpper 'x' = 'X'
+toUpper 'y' = 'Y'
+toUpper 'z' = 'Z'
+
+interface State S = get : S
+                  | put : S -> Unit
+
+state : S -> <State S>X -> X
+state _ x          = x
+state s <get -> k>  = state s (k s)
+state _ <put s -> k>  = state s (k unit)
+
+interface Exception E
+  = exception : E -> Zero
+
+throw : E -> [Exception E]X
+throw e = on (exception e) {}
+
+catch : <Exception E>X -> Either E X
+catch x = right x
+catch <exception e -> _> = left e
+
+-- catch : <Abort>X -> {X} -> X
+-- catch x               h = x
+-- catch <aborting -> k> h = h!
+
+-- note 
+--   catch [Exception E ? X] [] Either E X
+--   catch [x]            = right x  
+--   catch [throw e ? k]  = left e
+
+-- note
+-- catch' [Exception E ? X] [] Maybe X
+-- catch' [x]            = just x
+-- catch' [throw e ? k]  = nothing
+
+-- note Usage example, needs Nat.fk
+
+--   ex [Exception Char] Char
+--   ex = 'a' >> throw 'b'
+
+--   note
+--   main [] Maybe Char
+--   main = catch' ? ex!
+
+--   main [] Either Char Nat
+--   main = left 'a'
+
+-- main : {List Int}
+-- main! = concat (map {x -> x :: nil} (1 :: (2 :: nil)))
+
+next : [State Int]Int
+next! = put (get! + 1); get!
+
+-- main : {Int}
+-- main! = state 10 next!
+
+-- main : {List Char}
+-- main! = "abc"
+
+ex : Char -> [Exception Unit]Char
+ex n = if (eqChar n 'a') {throw unit} {'c'}
+
+avc : {[]Char}
+avc! = {'c'}
+
+main : {Either Unit Char}
+main! = catch (ex 'b')
+
+-- main : {Bool}
+-- main! = eqChar 'a' 'b'

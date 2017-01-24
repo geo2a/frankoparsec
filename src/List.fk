@@ -1,10 +1,10 @@
-data List X
-  = nil
-  | X :: (List X)
-
-(List X) ++ (List X) [] List X
-nil        ++ ys = ys
-(x :: xs)  ++ ys = x :: (xs ++ ys)
+-- data List X
+--   = nil
+--   | X :: (List X)
+-- 
+-- (List X) ++ (List X) [] List X
+-- nil        ++ ys = ys
+-- (x :: xs)  ++ ys = x :: (xs ++ ys)
 
 map {S -> T} (List S) [] List T
 map f nil       = nil

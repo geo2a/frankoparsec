@@ -1,0 +1,59 @@
+{--- Chars and strings ---}
+
+eqChar : Char -> Char -> Bool
+eqChar 'a' 'a' = true
+eqChar 'b' 'b' = true
+eqChar 'c' 'c' = true
+eqChar 'd' 'd' = true
+eqChar 'e' 'e' = true
+eqChar 'f' 'f' = true
+eqChar 'g' 'g' = true
+eqChar 'h' 'h' = true
+eqChar 'i' 'i' = true
+eqChar 'j' 'j' = true
+eqChar 'k' 'k' = true
+eqChar 'l' 'l' = true
+eqChar 'm' 'm' = true
+eqChar 'n' 'n' = true
+eqChar 'o' 'o' = true
+eqChar 'p' 'p' = true
+eqChar 'q' 'q' = true
+eqChar 'r' 'r' = true
+eqChar 's' 's' = true
+eqChar 't' 't' = true
+eqChar 'u' 'u' = true
+eqChar 'v' 'v' = true
+eqChar 'w' 'w' = true
+eqChar 'x' 'x' = true
+eqChar 'y' 'y' = true
+eqChar 'z' 'z' = true
+eqChar _   _   = false 
+
+toUpper : Char -> Char
+toUpper 'a' = 'A'
+toUpper 'b' = 'B'
+toUpper 'c' = 'C'
+toUpper 'd' = 'D'
+toUpper 'e' = 'E'
+toUpper 'f' = 'F'
+toUpper 'g' = 'G'
+toUpper 'h' = 'H'
+toUpper 'i' = 'I'
+toUpper 'j' = 'J'
+toUpper 'k' = 'K'
+toUpper 'l' = 'L'
+toUpper 'm' = 'M'
+toUpper 'n' = 'N'
+toUpper 'o' = 'O'
+toUpper 'p' = 'P'
+toUpper 'q' = 'Q'
+toUpper 'r' = 'R'
+toUpper 's' = 'S'
+toUpper 't' = 'T'
+toUpper 'u' = 'U'
+toUpper 'v' = 'V'
+toUpper 'w' = 'W'
+toUpper 'x' = 'X'
+toUpper 'y' = 'Y'
+toUpper 'z' = 'Z'
+
