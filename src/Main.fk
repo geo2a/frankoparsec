@@ -1,23 +1,2 @@
--- main : {List Int}
--- main! = concat (map {x -> x :: nil} (1 :: (2 :: nil)))
-
-next : [State Int]Int
-next! = put (get! + 1); get!
-
--- main : {Int}
--- main! = state 10 next!
-
--- main : {List Char}
--- main! = "abc"
-
-ex : Char -> [Exception Unit]Char
-ex n = if (eqChar n 'a') {throw unit} {'c'}
-
-avc : {[]Char}
-avc! = {'c'}
-
-main : {Either Unit Char}
-main! = catch (ex 'b')
-
--- main : {Bool}
--- main! = eqChar 'a' 'b'
+main : {Either ParseError Char}
+main! = parse {char 'a'} "abc" 

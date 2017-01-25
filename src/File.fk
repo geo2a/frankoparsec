@@ -1,8 +1,7 @@
---   X >> Y [] Y
---   x >> y = y
-
---   X >>= {X -> [] Y} [] Y
---   x >>= f = f x
+-- do m, do n, return the result of doing m. 
+-- Due to call-by-value, this is actually a ';' or '>>'
+fst : X -> Y -> X
+fst x y = x
 
 -- sequencing
 on : X -> {X -> Y} -> Y
@@ -13,11 +12,11 @@ if : Bool -> {X} -> {X} -> X
 if true  t f = t!
 if false t f = f!
 
-map : {{X -> Y} -> List X -> List Y}
+map : {X -> Y} -> List X -> List Y
 map f nil         = nil
 map f (cons x xs) = cons (f x) (map f xs)
 
-foldl : {{Y -> X -> Y} -> Y -> (List X) -> Y}
+foldl : {Y -> X -> Y} -> Y -> (List X) -> Y
 foldl g acc nil       = acc
 foldl g acc (x :: xs) = foldl g (g acc x) xs
 
@@ -89,6 +88,16 @@ eqChar 'w' 'w' = true
 eqChar 'x' 'x' = true
 eqChar 'y' 'y' = true
 eqChar 'z' 'z' = true
+eqChar '0' '0' = true
+eqChar '1' '1' = true
+eqChar '2' '2' = true
+eqChar '3' '3' = true
+eqChar '4' '4' = true
+eqChar '5' '5' = true
+eqChar '6' '6' = true
+eqChar '7' '7' = true
+eqChar '8' '8' = true
+eqChar '9' '9' = true
 eqChar _   _   = false 
 
 toUpper : Char -> Char
@@ -119,6 +128,73 @@ toUpper 'x' = 'X'
 toUpper 'y' = 'Y'
 toUpper 'z' = 'Z'
 
+isLetter : Char -> Bool
+isLetter 'a' = true
+isLetter 'b' = true
+isLetter 'c' = true
+isLetter 'd' = true
+isLetter 'e' = true
+isLetter 'f' = true
+isLetter 'g' = true
+isLetter 'h' = true
+isLetter 'i' = true
+isLetter 'j' = true
+isLetter 'k' = true
+isLetter 'l' = true
+isLetter 'm' = true
+isLetter 'n' = true
+isLetter 'o' = true
+isLetter 'p' = true
+isLetter 'q' = true
+isLetter 'r' = true
+isLetter 's' = true
+isLetter 't' = true
+isLetter 'u' = true
+isLetter 'v' = true
+isLetter 'w' = true
+isLetter 'x' = true
+isLetter 'y' = true
+isLetter 'z' = true
+isLetter 'A' = true
+isLetter 'B' = true
+isLetter 'C' = true
+isLetter 'D' = true
+isLetter 'E' = true
+isLetter 'F' = true
+isLetter 'G' = true
+isLetter 'H' = true
+isLetter 'I' = true
+isLetter 'J' = true
+isLetter 'K' = true
+isLetter 'L' = true
+isLetter 'M' = true
+isLetter 'N' = true
+isLetter 'O' = true
+isLetter 'P' = true
+isLetter 'Q' = true
+isLetter 'R' = true
+isLetter 'S' = true
+isLetter 'T' = true
+isLetter 'U' = true
+isLetter 'V' = true
+isLetter 'W' = true
+isLetter 'X' = true
+isLetter 'Y' = true
+isLetter 'Z' = true
+isLetter _   = false
+
+isDigit : Char -> Bool
+isDigit '0' = true
+isDigit '1' = true
+isDigit '2' = true
+isDigit '3' = true
+isDigit '4' = true
+isDigit '5' = true
+isDigit '6' = true
+isDigit '7' = true
+isDigit '8' = true
+isDigit '9' = true
+isDigit _   = false
 interface State S = get : S
                   | put : S -> Unit
 
@@ -136,53 +212,78 @@ throw e = on (exception e) {}
 catch : <Exception E>X -> Either E X
 catch x = right x
 catch <exception e -> _> = left e
+data ParseError = parseError
 
--- catch : <Abort>X -> {X} -> X
--- catch x               h = x
--- catch <aborting -> k> h = h!
+-- Interpret parsing as stateful computation with possible exceptions
+parse : {[Exception ParseError, State (List Char)] X} -> (List Char) -> 
+        Either ParseError X
+parse p str = catch (state str p!)
 
--- note 
---   catch [Exception E ? X] [] Either E X
---   catch [x]            = right x  
---   catch [throw e ? k]  = left e
+-- Consumes one symbol of any kind
+item : [Exception ParseError, State (List Char)]Char
+item! = on get! { nil       -> throw parseError
+                | (x :: xs) -> put xs; x} 
 
--- note
--- catch' [Exception E ? X] [] Maybe X
--- catch' [x]            = just x
--- catch' [throw e ? k]  = nothing
+-- Consumes item only if it satisfies given predicate
+---- It seems like we have something wierd here:
+---- p should be pure predicate of type {Char -> Bool}, but this doesn't 
+---- typecheck :(
+sat : {Char -> [Exception ParseError, State (List Char)]Bool} -> 
+      [Exception ParseError, State (List Char)]Char
+sat p = on item! {c -> if (p c) {c} {throw parseError}}
 
--- note Usage example, needs Nat.fk
+-- -- Consumes item only if it satisfies given predicate
+-- sat : {Char -> Bool} -> [Exception ParseError, State (List Char)]Char
+-- sat p = on item! {c -> if (p c) {c} {throw parseError}}
 
---   ex [Exception Char] Char
---   ex = 'a' >> throw 'b'
+-- Consumes item only if it is equal to specified char
+char : Char -> [Exception ParseError, State (List Char)]Char
+char c = sat {x -> eqChar x c} 
 
---   note
---   main [] Maybe Char
---   main = catch' ? ex!
+-- Parse a specified string
+string : (List Char) -> [Exception ParseError, State (List Char)](List Char)
+string str = map char str   
+ 
+-- Alternative-like operation: try first parser, if it fails -- try second one
+---- Type are as ugly as my life, 
+---- we need something to make them look more pretty.
+por : {[Exception ParseError, State (List Char)] X} -> 
+      {[Exception ParseError, State (List Char)] X} -> 
+      [Exception ParseError, State (List Char)] X
+por p1 p2 = 
+  on (parse p1 get!) { (right _)  -> p1! 
+                     | (left  _)  ->  on (parse p2 get!) 
+                       { (right _)   -> p2!
+                       | (left err)  -> throw err
+                       }
+                     }
 
---   main [] Either Char Nat
---   main = left 'a'
+-- Zero or more 
+many : {[Exception ParseError, State (List Char)]X} ->
+       [Exception ParseError, State (List Char)](List X)
+many p = por {some p} {nil}
 
--- main : {List Int}
--- main! = concat (map {x -> x :: nil} (1 :: (2 :: nil)))
+-- One or more
+some : {[Exception ParseError, State (List Char)] X} ->
+       [Exception ParseError, State (List Char)](List X)
+some p = p! :: many p
 
-next : [State Int]Int
-next! = put (get! + 1); get!
+letter : [Exception ParseError, State (List Char)]Char
+letter! = sat isLetter
 
--- main : {Int}
--- main! = state 10 next!
+digit : [Exception ParseError, State (List Char)]Char
+digit! = sat isDigit 
 
--- main : {List Char}
--- main! = "abc"
+alphanum : [Exception ParseError, State (List Char)]Char
+alphanum! = por digit letter  
 
-ex : Char -> [Exception Unit]Char
-ex n = if (eqChar n 'a') {throw unit} {'c'}
+word : [Exception ParseError, State (List Char)] (List Char)
+word! = some letter 
 
-avc : {[]Char}
-avc! = {'c'}
+number : [Exception ParseError, State (List Char)] (List Char)
+number! = some digit
+test_item_1 : {Either ParseError Char}
+test_item_1! = parse item "abc"
 
-main : {Either Unit Char}
-main! = catch (ex 'b')
-
--- main : {Bool}
--- main! = eqChar 'a' 'b'
+main : {Unit}
+main! = test_item_1!; unit

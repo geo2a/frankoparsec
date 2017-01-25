@@ -1,8 +1,7 @@
---   X >> Y [] Y
---   x >> y = y
-
---   X >>= {X -> [] Y} [] Y
---   x >>= f = f x
+-- do m, do n, return the result of doing m. 
+-- Due to call-by-value, this is actually a ';' or '>>'
+fst : X -> Y -> X
+fst x y = x
 
 -- sequencing
 on : X -> {X -> Y} -> Y
@@ -13,11 +12,11 @@ if : Bool -> {X} -> {X} -> X
 if true  t f = t!
 if false t f = f!
 
-map : {{X -> Y} -> List X -> List Y}
+map : {X -> Y} -> List X -> List Y
 map f nil         = nil
 map f (cons x xs) = cons (f x) (map f xs)
 
-foldl : {{Y -> X -> Y} -> Y -> (List X) -> Y}
+foldl : {Y -> X -> Y} -> Y -> (List X) -> Y
 foldl g acc nil       = acc
 foldl g acc (x :: xs) = foldl g (g acc x) xs
 
