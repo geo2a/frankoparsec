@@ -1,13 +1,15 @@
-data ParseError = parseError
+data ParseError = inputExhausted
+                | parseError
 
 -- Interpret parsing as stateful computation with possible exceptions
-parse : {[Exception ParseError, State (List Char)] X} -> (List Char) -> 
-        Either ParseError X
+parse : {[Exception ParseError
+         , State (List Char)] X
+        } -> (List Char) -> Either ParseError X
 parse p str = catch (state str p!)
 
 -- Consumes one symbol of any kind
 item : [Exception ParseError, State (List Char)]Char
-item! = on get! { nil       -> throw parseError
+item! = on get! { nil       -> throw inputExhausted
                 | (x :: xs) -> put xs; x} 
 
 -- Consumes item only if it satisfies given predicate
@@ -67,4 +69,4 @@ word : [Exception ParseError, State (List Char)] (List Char)
 word! = some letter 
 
 number : [Exception ParseError, State (List Char)] (List Char)
-number! = some digit
+number! = some {sat isDigit}

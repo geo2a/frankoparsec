@@ -98,6 +98,9 @@ eqChar '6' '6' = true
 eqChar '7' '7' = true
 eqChar '8' '8' = true
 eqChar '9' '9' = true
+eqChar ' ' ' ' = true
+eqChar '\n' '\n' = true
+eqChar '\t' '\t' = true
 eqChar _   _   = false 
 
 toUpper : Char -> Char
@@ -195,6 +198,12 @@ isDigit '7' = true
 isDigit '8' = true
 isDigit '9' = true
 isDigit _   = false
+
+isSpace : Char -> Bool
+isSpace ' '  = true
+isSpace '\n' = true
+isSpace '\t' = true
+isSpace _    = false
 interface State S = get : S
                   | put : S -> Unit
 
@@ -212,78 +221,103 @@ throw e = on (exception e) {}
 catch : <Exception E>X -> Either E X
 catch x = right x
 catch <exception e -> _> = left e
-data ParseError = parseError
+data Pair A B = pair A B 
 
--- Interpret parsing as stateful computation with possible exceptions
-parse : {[Exception ParseError, State (List Char)] X} -> (List Char) -> 
-        Either ParseError X
-parse p str = catch (state str p!)
+data ParseError = err
 
--- Consumes one symbol of any kind
-item : [Exception ParseError, State (List Char)]Char
-item! = on get! { nil       -> throw parseError
-                | (x :: xs) -> put xs; x} 
+interface Parser = fail : ParseError -> Char
+                 | sat : {Char -> Bool} -> Char
+                 | choose : {[Parser] Char} -> {[Parser] Char} -> Char
 
--- Consumes item only if it satisfies given predicate
----- It seems like we have something wierd here:
----- p should be pure predicate of type {Char -> Bool}, but this doesn't 
----- typecheck :(
-sat : {Char -> [Exception ParseError, State (List Char)]Bool} -> 
-      [Exception ParseError, State (List Char)]Char
-sat p = on item! {c -> if (p c) {c} {throw parseError}}
+runParser : (List Char) -> <Parser>Char -> 
+            Either ParseError (Pair Char (List Char))
+runParser xs r = right (pair r xs)
+runParser _ <fail err -> _> = left err
+runParser nil <sat p -> k> = left err
+runParser (x::xs) <sat p -> k> = 
+  if (p x) {runParser xs (k x)} {runParser nil (fail err)}
+runParser xs <choose p1 p2 -> k> = 
+  on (runParser xs p1!)
+    { (right _) -> runParser xs p1!
+    | (left err) -> on (runParser xs p2!) 
+      { (right _) -> runParser xs p2!
+      | (left err) -> left err
+      }
+    }
 
--- -- Consumes item only if it satisfies given predicate
--- sat : {Char -> Bool} -> [Exception ParseError, State (List Char)]Char
--- sat p = on item! {c -> if (p c) {c} {throw parseError}}
+parse : (List Char) -> {[Parser]Char} -> 
+        Either ParseError Char
+parse xs p = on (runParser xs p!) 
+  { (right (pair y ys)) -> right y 
+  | (left          err) -> left err
+  } 
 
--- Consumes item only if it is equal to specified char
-char : Char -> [Exception ParseError, State (List Char)]Char
-char c = sat {x -> eqChar x c} 
+char : Char -> [Parser]Char
+char c = sat {x -> eqChar x c}
 
--- Parse a specified string
-string : (List Char) -> [Exception ParseError, State (List Char)](List Char)
-string str = map char str   
- 
--- Alternative-like operation: try first parser, if it fails -- try second one
----- Type are as ugly as my life, 
----- we need something to make them look more pretty.
-por : {[Exception ParseError, State (List Char)] X} -> 
-      {[Exception ParseError, State (List Char)] X} -> 
-      [Exception ParseError, State (List Char)] X
-por p1 p2 = 
-  on (parse p1 get!) { (right _)  -> p1! 
-                     | (left  _)  ->  on (parse p2 get!) 
-                       { (right _)   -> p2!
-                       | (left err)  -> throw err
-                       }
-                     }
-
--- Zero or more 
-many : {[Exception ParseError, State (List Char)]X} ->
-       [Exception ParseError, State (List Char)](List X)
-many p = por {some p} {nil}
-
--- One or more
-some : {[Exception ParseError, State (List Char)] X} ->
-       [Exception ParseError, State (List Char)](List X)
-some p = p! :: many p
-
-letter : [Exception ParseError, State (List Char)]Char
+letter : [Parser]Char
 letter! = sat isLetter
 
-digit : [Exception ParseError, State (List Char)]Char
-digit! = sat isDigit 
+space : [Parser]Char
+space! = char ' '
 
-alphanum : [Exception ParseError, State (List Char)]Char
-alphanum! = por digit letter  
 
-word : [Exception ParseError, State (List Char)] (List Char)
-word! = some letter 
+-- main : {Either ParseError (Pair Char (List Char))}
+-- main! = runParser "ab" (sat {x -> eqChar x 'a'})
 
-number : [Exception ParseError, State (List Char)] (List Char)
-number! = some digit
-test_item_1 : {Either ParseError Char}
-test_item_1! = parse item "abc"
+-- string : (List Char) -> [Parser(List Char)](List Char)
+-- string str = map char str 
 
-main : {Unit}
-main! = test_item_1!; unit
+-- many : {[Parser X]Y} -> [Parser X](List Y) 
+-- many p = choose {p! :: many p} {nil}
+
+-- main : {Either ParseError Char}
+-- main! = parse "ab" (char 'a')
+
+-- main : {Either ParseError (List Char)}
+-- main! = parse "ab" (string "ab")
+
+-- ex : [Parser Char, Console]Unit
+-- ex! = on (char 'a') { (right x) -> ouch x
+--                     | (left e)  -> unit}
+
+-- ex : [Console]Unit
+-- ex! = ouch 'a'
+
+
+-- main : {Either ParseError (Pair Char (List Char))}
+-- main! = runParser "abcsdf dsdsd" (
+--   choose {sat {x -> eqChar x 'b'}} {sat {x -> true}}
+--   )
+
+-- main : [Console]Unit
+-- main! = parse "ab" (ex!)
+
+-- main : {Either ParseError (List Char)}
+-- main! = parse "ab" (many {char 'a'})
+interface MultiParser = singleton : {[Parser] Char} -> List Char
+                      | many : {[Parser] Char} -> List Char
+
+runMultiParser : (List Char) -> <MultiParser>(List Char) -> List Char
+runMultiParser _ r = r
+runMultiParser xs <singleton p -> k> =
+  on (runParser xs p!) { (right (pair ok rest)) -> 
+                            ok :: (runMultiParser rest (k nil))  
+                       | (left  _) -> nil
+                       }
+runMultiParser xs <many p -> k> =    
+  on (runParser xs p!) 
+    { (right (pair ok rest)) -> ok :: (runMultiParser rest (many p; k nil))
+    | (left err) -> runMultiParser xs (k nil)
+    }
+
+word : [MultiParser](List Char)
+word! = many letter
+
+-- main : {List Char}
+-- main! = runMultiParser "aab vfd" (many {char 'a'}; singleton {char 'b'}) 
+
+main : {List Char}
+main! = runMultiParser "aab vfd" (word!; singleton space; word!) 
+-- main : {Either ParseError (List Char)}
+-- main! = parse {number!} "123" 

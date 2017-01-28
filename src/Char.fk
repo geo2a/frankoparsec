@@ -37,6 +37,9 @@ eqChar '6' '6' = true
 eqChar '7' '7' = true
 eqChar '8' '8' = true
 eqChar '9' '9' = true
+eqChar ' ' ' ' = true
+eqChar '\n' '\n' = true
+eqChar '\t' '\t' = true
 eqChar _   _   = false 
 
 toUpper : Char -> Char
@@ -134,3 +137,9 @@ isDigit '7' = true
 isDigit '8' = true
 isDigit '9' = true
 isDigit _   = false
+
+isSpace : Char -> Bool
+isSpace ' '  = true
+isSpace '\n' = true
+isSpace '\t' = true
+isSpace _    = false

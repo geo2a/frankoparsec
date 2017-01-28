@@ -1,0 +1,24 @@
+interface MultiParser = singleton : {[Parser] Char} -> List Char
+                      | many : {[Parser] Char} -> List Char
+
+runMultiParser : (List Char) -> <MultiParser>(List Char) -> List Char
+runMultiParser _ r = r
+runMultiParser xs <singleton p -> k> =
+  on (runParser xs p!) { (right (pair ok rest)) -> 
+                            ok :: (runMultiParser rest (k nil))  
+                       | (left  _) -> nil
+                       }
+runMultiParser xs <many p -> k> =    
+  on (runParser xs p!) 
+    { (right (pair ok rest)) -> ok :: (runMultiParser rest (many p; k nil))
+    | (left err) -> runMultiParser xs (k nil)
+    }
+
+word : [MultiParser](List Char)
+word! = many letter
+
+-- main : {List Char}
+-- main! = runMultiParser "aab vfd" (many {char 'a'}; singleton {char 'b'}) 
+
+main : {List Char}
+main! = runMultiParser "aab vfd" (word!; singleton space; word!) 

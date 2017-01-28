@@ -1,2 +1,2 @@
-main : {Either ParseError Char}
-main! = parse {char 'a'} "abc" 
+-- main : {Either ParseError (List Char)}
+-- main! = parse {number!} "123" 
