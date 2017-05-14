@@ -1,8 +1,0 @@
-interface State S = get : S
-                  | put : S -> Unit
-
-state : S -> <State S>X -> X
-state _ x          = x
-state s <get -> k>  = state s (k s)
-state _ <put s -> k>  = state s (k unit)
-

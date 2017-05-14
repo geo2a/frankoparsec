@@ -1,4 +1,4 @@
 cd src
-cat Control.fk Primitives.fk Char.fk State.fk Exception.fk Main.fk > File.fk
+cat base/Control.fk base/Primitives.fk base/Char.fk base/State.fk base/Exception.fk ParserCombo/Parser.fk ParserCombo/MDparser.fk > File.fk
 frank File.fk
 cd ..

@@ -1,0 +1,121 @@
+data Pair A B = pair A B
+
+joinPair : Pair (Pair A B) B -> Pair A B
+
+-- first : Pair A B -> A
+-- first (pair a b) = a
+
+-- second : Pair A B -> B
+-- second (pair a b) = b
+
+interface Parser X Y = fail : Y
+                     | sat : {Char -> Bool} -> Char
+                     | choose : {[Parser X Y] Y} -> {[Parser X Y] Y} -> Y
+                     | many : {[Parser X (List Y)] (List Y)} -> List Y
+
+runParser : (List Char) -> <Parser X Y>Y ->
+            Pair (Maybe Y) (List Char)
+runParser xs r = pair (just r) xs
+runParser xs <fail -> _> = pair nothing xs
+runParser nil <sat p -> k> = pair nothing nil
+runParser (x::xs) <sat p -> k> =
+  if (p x) {runParser xs (k x)} {pair nothing (x::xs)}
+runParser xs <choose p1 p2 -> k> =
+  on (runParser xs p1!)
+    { (pair (just _) _) -> runParser xs p1!
+    | (pair nothing _) -> on (runParser xs p2!)
+      { (pair (just _) _) -> runParser xs p2!
+      | (pair nothing _) -> pair nothing xs
+      }
+    }
+runParser xs <many p -> k> =
+  on (runParser xs p!)
+    { (pair (just ok) rest) -> pair (just ok) rest -- (runMultiParser rest (many p; k nil))
+    | (pair nothing _) -> pair nothing nil -- runParser xs (k nil)
+    }
+  -- on (runParser xs p1!)
+  --   { (pair (just _) _) -> runParser xs p1!
+  --   | (pair nothing _) -> on (runParser xs p2!)
+  --     { (pair (just _) _) -> runParser xs p2!
+  --     | (pair nothing _) -> pair nothing xs
+  --     }
+  --   }
+
+-- choose : List Char -> {[Parser]X} -> {[Parser]X} -> [Parser]X
+-- choose xs p1 p2 =
+--   on (runParser xs p1!)
+--     { (right _) -> runParser xs p1!
+--     | (left err) -> on (runParser xs p2!)
+--       { (right _) -> runParser xs p2!
+--       | (left err) -> runParser xs (fail err)
+--       }
+--     }
+
+char : Char -> [Parser Char Char]Char
+char c = sat {x -> eqChar x c}
+
+char' : Char -> [Parser Char (List Char)](List Char)
+char' c = (sat {x -> eqChar x c}) :: nil
+
+-- many : {[Parser Char (List Char)](List Char)} -> [Parser Char (List Char)](List Char)
+-- many p =
+--   choose {p!} {nil}
+-- many p = append (p!) (many p)
+
+-- One or more
+-- some : {[Parser Char (List Char)](List Char)} -> [Parser Char (List Char)](List Char)
+-- some p = append p! (many p)
+
+string : (List Char) -> [Parser Char (List Char)](List Char)
+string nil     = nil
+string (x::xs) = append (char' x) (string xs)
+
+-- string : (List Char) -> [Parser Char (List Char)](List Char)
+-- string str = map char str
+
+-- main : {Pair (Maybe Char) (List Char)}
+-- main! = runParser "ab" (char 'a'; char 'b')
+
+-- main : {Pair (Maybe (List Char)) (List Char)}
+-- main! = runParser "ab" (singleton {char 'a'})
+
+-- main : {Pair (Maybe (List Char)) (List Char)}
+-- main! = runParser "ab" (string "a")
+
+main : {Pair (Maybe (List Char)) (List Char)}
+main! = runParser "aaab" (many {char' 'a'})
+
+-- main : {Pair (Maybe Char) (List Char)}
+-- main! = runParser "ab" (choose {char 'a'} {char 'b'})
+
+-- main : {(Pair (Maybe (List Char)) (List Char))}
+-- main! = runParser "ab" (choose {"ab"} {"cd"})
+
+-- main : {Either ParseError (Pair (List Char) (List Char))}
+-- main! = runParser "ab" ("bcd")
+
+-- main : {Either ParseError (Pair (List Char) (List Char))}
+-- main! = runParser "ab cde" (string "ab")
+
+-- main : {Either ParseError (Pair Char (List Char))}
+-- main! = runParser "ab" ('x')
+
+-- main : {Either ParseError (Pair Char (List Char))}
+-- main! = runParser "ab" (fail err)
+
+-- main : {Either ParseError (Pair Char (List Char))}
+-- main! = runParser "ab" (echo "эхо"; 'a')
+
+-- main : {Either ParseError (Pair (List Char) (List Char))}
+-- main! = runParser "ab" (many {'a'})
+
+-- interface State1 = get1 : (List Int)
+--                  | put1 : (List Int) -> Unit
+
+-- state1 : (List Int) -> <State1>X -> X
+-- state1 s <get1 -> k>  = state1 s (k s)
+-- state1 _ <put1 s -> k>  = state1 s (k unit)
+-- state1 _ x          = x
+
+-- main : {List Int}
+-- main! = state1 [] (on get1! {s -> put1 (1::s); get1!;})

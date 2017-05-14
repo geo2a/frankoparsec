@@ -38,9 +38,17 @@ eqChar '7' '7' = true
 eqChar '8' '8' = true
 eqChar '9' '9' = true
 eqChar ' ' ' ' = true
+eqChar '+' '+' = true
+eqChar '-' '-' = true
+eqChar '*' '*' = true
+eqChar '/' '/' = true
+eqChar '#' '#' = true
+eqChar '.' '.' = true
+eqChar ',' ',' = true
+eqChar ':' ':' = true
 eqChar '\n' '\n' = true
 eqChar '\t' '\t' = true
-eqChar _   _   = false 
+eqChar _   _   = false
 
 toUpper : Char -> Char
 toUpper 'a' = 'A'

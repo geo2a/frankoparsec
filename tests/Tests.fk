@@ -1,5 +1,0 @@
-test_item_1 : {Either ParseError Char}
-test_item_1! = parse item "abc"
-
-main : {Unit}
-main! = test_item_1!; unit

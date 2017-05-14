@@ -1,0 +1,81 @@
+data ParseError = inputExhausted
+                | parseError String
+
+-- Interpret parsing as stateful computation with possible exceptions
+parse : {[Exception ParseError
+         , State String] X
+        } -> String -> Either ParseError X
+parse p str = catch (state str p!)
+
+-- Consumes one symbol of any kind
+item : [Exception ParseError, State String]Char
+item! = on get! { nil       -> throw inputExhausted
+                | (x :: xs) -> put xs; x}
+
+-- Consumes item only if it satisfies given predicate
+---- It seems like we have something wierd here:
+---- p should be pure predicate of type {Char -> Bool}, but this doesn't
+---- typecheck :(
+sat : {Char -> [Exception ParseError, State String]Bool} ->
+      [Exception ParseError, State String]Char
+sat p = on item! {c -> if (p c) {c}
+                       {throw (parseError (append "Unexpected input " [c]))}}
+
+-- Consumes item only if it is equal to specified char
+char : Char -> [Exception ParseError, State String]Char
+char c = sat {x -> eqChar x c}
+
+-- Parse a specified string
+string : String -> [Exception ParseError, State String]String
+string str = map char str
+
+-- Alternative-like operation: try first parser, if it fails -- try second one
+choose : {[Exception ParseError, State String] X} ->
+         {[Exception ParseError, State String] X} ->
+          [Exception ParseError, State String] X
+choose p1 p2 =
+  on (parse p1 get!) { (right _)  -> p1!
+                     | (left  _)  ->  on (parse p2 get!)
+                       { (right _)   -> p2!
+                       | (left err)  -> throw err
+                       }
+                     }
+
+
+-- Zero or more
+many : {[Exception ParseError, State String]X} ->
+       [Exception ParseError, State String](List X)
+many p = choose {some p} {nil}
+
+-- One or more
+some : {[Exception ParseError, State String] X} ->
+       [Exception ParseError, State String](List X)
+some p = p! :: many p
+
+letter : [Exception ParseError, State String]Char
+letter! = sat isLetter
+
+digit : [Exception ParseError, State String]Char
+digit! = sat isDigit
+
+alphanum : [Exception ParseError, State String]Char
+alphanum! = choose digit letter
+
+word : [Exception ParseError, State String] String
+word! = some letter
+
+number : [Exception ParseError, State String] String
+number! = some {sat isDigit}
+
+--------------------Repetitions with seporators----------------
+sepby : {[Exception ParseError, State String]X} ->
+        {[Exception ParseError, State String]Y} ->
+        [Exception ParseError, State String](List X)
+sepby p sep = choose {sepby1 p sep} {[]}
+
+sepby1 : {[Exception ParseError, State String]X} ->
+         {[Exception ParseError, State String]Y} ->
+         [Exception ParseError, State String](List X)
+sepby1 p sep = p! :: (many {sep!; p!})
+
+--------------------------------------------------------------------------------

@@ -14,8 +14,8 @@ plusNat : Nat -> Nat -> Nat
 plusNat zero y = y
 plusNat (suc x) y = suc (plusNat x y)
 
-eqInt : Int -> Int -> Bool 
-eqInt 0 0 = true 
+eqInt : Int -> Int -> Bool
+eqInt 0 0 = true
 eqInt 0 _ = false
 eqInt _ 0 = false
 eqInt x y = eqInt (x - 1) (y - 1)
@@ -29,6 +29,9 @@ append (cons x xs) ys = cons x (append xs ys)
 concat : (List (List X)) -> List X
 concat xs = foldl {x y -> append x y} nil xs
 
+length : (List X) -> Int
+length xs = foldl {acc _ -> acc + 1} 0 xs
+
 {--- Other ---}
 
 data Zero =     -- empty type
@@ -36,3 +39,5 @@ data Zero =     -- empty type
 data Maybe A = just A | nothing
 
 data Either A B = left A | right B
+
+data Pair A B = pair A B

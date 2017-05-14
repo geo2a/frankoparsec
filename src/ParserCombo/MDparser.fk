@@ -1,0 +1,36 @@
+data Document = Document (List Block)
+
+data Block = Blank
+           | Header Int Line
+           | Paragraph (List Line)
+           | UnorderedList (List Line)
+
+data Line = Empty | NonEmpty (List String)
+
+line : [Exception ParseError, State String] Line
+line! = choose emptyLine nonEmptyLine
+
+emptyLine : [Exception ParseError, State String] Line
+emptyLine! = many {char ' '};
+             char '\n';
+             Empty
+
+nonEmptyLine : [Exception ParseError, State String] Line
+nonEmptyLine! = many {char ' '};
+                let ws = sepby word {char ' '}
+                in char '\n'; NonEmpty ws
+
+header : [Exception ParseError, State String] Block
+header! = Header (length (some {char '#'})) line!
+
+paragraph : [Exception ParseError, State String] Block
+paragraph! = Paragraph (some nonEmptyLine)
+
+unorderedList : [Exception ParseError, State String] Block
+unorderedList! = UnorderedList (some (char '*'; line))
+
+document : [Exception ParseError, State String] Document
+document! = Document (some {choose header {choose paragraph unorderedList}})
+
+main : {Either ParseError Document}
+main! = parse document "# Hello World\n\nHi\n\n* first\n* second\n"

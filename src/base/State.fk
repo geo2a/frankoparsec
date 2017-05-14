@@ -1,0 +1,21 @@
+interface State S = get : S
+                  | put : S -> Unit
+
+-- Here, k is of type like S -> X
+state : S -> <State S>X -> X
+state s <get -> k>  = state s (k s)
+state _ <put s -> k>  = state s (k unit)
+state _ x          = x
+
+range_1_n : Nat -> [State (List Nat)](List Nat)
+range_1_n zero = get!
+range_1_n (suc n) = on get! {xs -> put (suc n :: xs); range_1_n n
+                            }
+
+-- range_1_n_prime : [Reader Nat, State (List Nat)](List Nat)
+-- range_1_n_prime! = on ask! { (zero)  -> get!
+--                            | (suc n) -> put (suc n :: get!); range_1_n n 
+--                            }  
+
+-- main : {List Nat}
+-- main! = state [] (range_1_n (suc (suc zero)))
