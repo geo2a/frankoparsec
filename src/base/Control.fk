@@ -1,11 +1,11 @@
--- do m, do n, return the result of doing m. 
--- Due to call-by-value, this is actually a ';' or '>>'
-fst : X -> Y -> X
-fst x y = x
+{--- Basic control flow ---}
 
 -- sequencing
 on : X -> {X -> Y} -> Y
 on x f = f x
+
+snd : X -> Y -> Y
+snd _ y = y
 
 -- lazy conditional
 if : Bool -> {X} -> {X} -> X

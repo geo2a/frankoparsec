@@ -18,7 +18,7 @@ item! = on get! { nil       -> throw inputExhausted
 ---- typecheck :(
 sat : {Char -> [Exception ParseError, State String]Bool} ->
       [Exception ParseError, State String]Char
-sat p = on item! {c -> if (p c) {c}
+sat p = on item! {c -> if (p c) {c}  -- (\() -> x)
                        {throw (parseError (append "Unexpected input " [c]))}}
 
 -- Consumes item only if it is equal to specified char

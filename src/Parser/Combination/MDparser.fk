@@ -1,0 +1,58 @@
+--------------------------------------------------------------------------------
+----------  A parser for trivial Markdown-like language  -----------------------
+--------------------------------------------------------------------------------
+
+data Document = Document (List Block)
+
+data Block = Header Int Line
+           | Paragraph (List Line)
+           | UnorderedList (List Line)
+
+data Line = Empty | NonEmpty (List String)
+
+line : [Exception ParseError, State String] Line
+line! = choose emptyLine nonEmptyLine
+
+emptyLine : [Exception ParseError, State String] Line
+emptyLine! = many {char ' '};
+             char '\n';
+             Empty
+
+nonEmptyLine : [Exception ParseError, State String] Line
+nonEmptyLine! = many {char ' '};
+                let ws = sepby word {char ' '}
+                in char '\n'; NonEmpty ws
+
+header : [Exception ParseError, State String] Block
+header! = Header (length (some {char '#'})) line!
+
+paragraph : [Exception ParseError, State String] Block
+paragraph! = Paragraph (some {line!})
+
+unorderedList : [Exception ParseError, State String] Block
+unorderedList! = UnorderedList (some {char '*'; line!})
+
+block : [Exception ParseError, State String] Block
+block! = choose header {choose paragraph unorderedList}
+
+document : [Exception ParseError, State String] Document
+document! = Document (some block)
+
+--------------------------------------------------------------------------------
+-- Parse errors ----------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+-- Empty document
+err1 : {Either ParseError Document}
+err1! = parse document ""
+
+--------------------------------------------------------------------------------
+-- Usage examples --------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+main : {Either ParseError Document}
+main! = parse document "# ToDo list\nThings to do today\n* Drink coffee\n* Write thesis\n"
+
+-- main : {Either ParseError Document}
+-- main! = err1!
+

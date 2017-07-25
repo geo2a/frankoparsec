@@ -1,4 +1,4 @@
-{--- Chars and strings ---}
+{--- Equality of chars and strings ---}
 
 eqChar : Char -> Char -> Bool
 eqChar 'a' 'a' = true
@@ -151,3 +151,9 @@ isSpace ' '  = true
 isSpace '\n' = true
 isSpace '\t' = true
 isSpace _    = false
+
+eqString : String -> String -> Bool
+eqString [] [] = true
+eqString (x :: xs) [] = false 
+eqString [] (y :: ys) = false
+eqString (x :: xs) (y :: ys) = and (eqChar x y) (eqString xs ys) 

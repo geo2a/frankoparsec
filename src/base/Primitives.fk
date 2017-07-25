@@ -1,4 +1,12 @@
+{--- Booleans ---}
+
 data Bool = true | false
+
+and : Bool -> Bool -> Bool
+and false false = false
+and false true  = false
+and true false  = false
+and true true   = true
 
 {--- Natural numbers and Ints ---}
 

@@ -1,0 +1,97 @@
+data ParseError = err
+
+interface Parser = fail : Zero
+                 | item : Char
+                 | choice : Bool
+                 | parallel : Bool
+
+abort : [Parser]X
+abort! = on fail! {}
+
+choose : {[Parser]X} -> {[Parser]X} -> [Parser]X
+choose p q = if choice! p q
+
+both : {[Parser]X} -> {[Parser]X} -> [Parser]X
+both p q = if parallel! p q 
+
+sat : {Char -> [Parser]Bool} -> [Parser]Char
+sat cond = on item! {c -> if (cond c) {c} abort}
+
+char : Char -> [Parser]Char
+char c = sat {x -> eqChar c x}
+
+letter : [Parser]Char
+letter! = sat isLetter
+
+word : [Parser] String
+word! = some letter
+
+many : {[Parser]X} -> [Parser](List X)
+many p = choose {some p} {nil}
+
+some : {[Parser]X} -> [Parser](List X)
+some p = p! :: many p
+
+sepby : {[Parser]X} -> {[Parser]Y} -> [Parser](List X)
+sepby p sep = choose {p! :: (many {sep!; p!})} {nil}
+
+-- parse : String -> <Parser>X -> Pair (Maybe X) String
+-- parse (nil)     <item -> k> = parse nil abort!
+-- parse (x :: xs) <item -> k> = on (parse xs (k x)) {c -> c}
+-- parse xs <choice -> k> = 
+--   on (parse xs (k true)) { (pair (just x) ys) -> pair (just x) ys  
+--                           | (pair nothing _)  -> parse xs (k false)
+--                           }
+-- parse xs <fail -> k>   = pair nothing xs
+-- parse xs x = pair (just x) xs
+
+parse : String -> <Parser>X -> Maybe (Pair X String)
+parse (nil)     <item -> k> = parse nil abort!
+parse (x :: xs) <item -> k> = on (parse xs (k x)) {c -> c}
+parse xs <choice -> k> = 
+  on (parse xs (k true)) { (just p)-> just p
+                           | nothing  -> parse xs (k false)
+                           }
+parse xs <fail -> k>   = nothing
+parse xs <parallel -> k > = 
+  on (pair (parse xs (k true)) (parse xs (k false)))  
+       { (pair (just (pair x xs)) (just (pair _ xs'))) -> 
+                if (eqString xs xs') {just (pair x xs)} {nothing}
+       | _ -> nothing}
+parse xs x = just (pair x xs)
+
+parseAll : (List Char) -> <Parser>X -> List X
+parseAll (nil)     <item -> k> = nil
+parseAll (x :: xs) <item -> k> = on (parseAll xs (k x)) {c -> c}
+parseAll xs <choice -> k> = append (parseAll xs (k true)) (parseAll xs (k false))
+-- parseAll xs <choice -> k> = intersect (parseAll xs (k true)) (parseAll xs (k false))
+parseAll _ <fail -> k>   = []
+parseAll _ x = [x] 
+
+parseAll' : (List Char) -> <Parser>X -> List (Pair X String)
+parseAll' (nil)     <item -> k> = nil
+parseAll' (x :: xs) <item -> k> = on (parseAll' xs (k x)) {c -> c}
+parseAll' xs <choice -> k> = append (parseAll' xs (k true)) (parseAll' xs (k false))
+parseAll' xs <fail -> k>   = []
+parseAll' xs x = [pair x xs] 
+
+-- main : {Maybe (List String)}
+-- main! = parse "hello world" (word! :: (char ' ') :: (word! :: nil))
+
+-- main : {Maybe Char}
+-- main! = parse "ab" (choose abort {choose {'b'} abort})
+
+-- main : {Maybe (List Char)}
+-- main! = parse "ab" ((sat {x -> eqChar x 'a'}) :: (next! :: nil))
+
+-- main : {Maybe (List Char)}
+-- main! = parse "aabbb" (many {choose {char 'a'} {char 'b'}})
+
+-- main : {List (Pair String String)}
+-- main! = parseAll' "a,b,c,d" (sepby letter {char ','})
+
+main : {Maybe (Pair (List Char) String)}
+main! = parse "abc" ((both letter {char 'a'}) :: (letter! :: nil))
+
+-- main : {Bool}
+-- main! = eqString "" ""

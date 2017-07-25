@@ -1,2 +1,29 @@
--- main : {Either ParseError (List Char)}
--- main! = parse {number!} "123"
+main : {Either ParseError (Pair (List Char) Char)}
+main! = parse {pair (number!) (char 'a')} "123a"
+
+-- main : {Either ParseError Char}
+-- main! = parse "123" {fail err}
+
+-- main : {Either ParseError Char}
+-- main! = parse "123" {choose {char '1'} {char '2'}; char '2'}
+
+-- interface Nondet = choose : Bool
+--                   | fail : Zero 
+
+-- -- Here, k is of type like S -> X
+-- maybe : <Nondet>X -> Maybe X
+-- maybe <choose -> k>  = on (maybe (k true)) {(just x) -> just x  | nothing -> maybe (k false)}
+-- maybe <fail -> k>  = nothing
+-- maybe x = just x 
+
+-- abort : [Nondet]X
+-- abort! = on fail! {}
+
+-- ch : {[Nondet]X} -> {[Nondet]X} -> [Nondet]X
+-- ch p q = if choose! p q
+
+-- -- main : {Maybe Char}
+-- -- main! = maybe (ch abort {ch {'b'} abort})
+
+-- main : {[Nondet]Zero}
+-- main! = fail

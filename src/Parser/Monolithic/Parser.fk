@@ -1,0 +1,81 @@
+data ParseError = err
+
+interface Parser = fail : Zero
+                 | item : Char
+                 | choice : Bool
+
+-- Abort parsing
+abort : [Parser]X
+abort! = on fail! {}
+
+-- Choose between two parsers (determinism is controlled by handling) 
+choose : {[Parser]X} -> {[Parser]X} -> [Parser]X
+choose p q = if choice! p q
+
+sat : {Char -> [Parser]Bool} -> [Parser]Char
+sat cond = on item! {c -> if (cond c) {c} abort}
+
+-- Parser a known character
+char : Char -> [Parser]Char
+char c = sat {x -> eqChar c x}
+
+-- Parse and arbitrary character
+letter : [Parser]Char
+letter! = sat isLetter
+
+-- Parse a word (a sequence of characters)
+word : [Parser] String
+word! = some letter
+
+-- Parse a sequence of entities
+many : {[Parser]X} -> [Parser](List X)
+many p = choose {some p} {nil}
+
+-- Parse a non-empty sequence of entities
+some : {[Parser]X} -> [Parser](List X)
+some p = p! :: many p
+
+-- Parse a sequence of entities separated by something (CSV, for instance)
+sepby : {[Parser]X} -> {[Parser]Y} -> [Parser](List X)
+sepby p sep = choose {p! :: (many {sep!; p!})} {nil}
+
+-- Deterministic greedy parsing, returns the  best match
+parse : String -> <Parser>X -> Maybe (Pair X String)
+parse (nil)     <item -> k> = parse nil abort!
+parse (x :: xs) <item -> k> = on (parse xs (k x)) {c -> c}
+parse xs <choice -> k> = 
+  on (parse xs (k true)) { (just p)-> just p
+                           | nothing  -> parse xs (k false)
+                           }
+parse xs <fail -> k>   = nothing
+parse xs x = just (pair x xs)
+
+-- Wadler's "List of successes" parsing
+parseAll : (List Char) -> <Parser>X -> List (Pair X String)
+parseAll (nil)     <item -> k> = nil
+parseAll (x :: xs) <item -> k> = on (parseAll xs (k x)) {c -> c}
+parseAll xs <choice -> k>      =
+  append (parseAll xs (k true)) (parseAll xs (k false))
+parseAll xs <fail -> k>        = []
+parseAll xs x                  = [pair x xs] 
+
+ex1 : {Maybe (Pair (List String) String)}
+ex1! = parse "hello world" (word! :: (snd (many {char ' '}) word! :: nil))
+
+ex2 : {Maybe (Pair Char String)} 
+ex2! = parse "ab" (choose {char 'a'} {char 'b'})
+
+-- ex3 : {Maybe (List Char)}
+-- ex3! = parse "ab" ((sat {x -> eqChar x 'a'}) :: (next! :: nil))
+
+-- ex4 : {Maybe (List Char)}
+-- ex4! = parse "aabbb" (many {choose {char 'a'} {char 'b'}})
+
+-- ex5 : {List (Pair String String)}
+-- ex5! = parseAll "a,b,c,d" (sepby letter {char ','})
+
+-- ex6 : {Pair (Maybe (List Char)) String}
+-- ex6! = parse' "a,b,c,d" (sepby letter {char ','})
+
+-- ex7 : {Pair (Maybe (List Char)) String}
+-- ex7! = parse' "a,b,c,d" (letter! :: ((char ',') :: nil))
